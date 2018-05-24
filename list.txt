@@ -1,0 +1,14 @@
+FileName	Classes
+GSM455115.CEL	kopt_dmso
+GSM455116.CEL	kopt_dmso
+GSM455117.CEL	kopt_dmso
+GSM455118.CEL	hpb_dmso
+GSM455119.CEL	hpb_dmso
+GSM455120.CEL	hpb_dmso
+GSM455121.CEL	kopt_sahm
+GSM455122.CEL	kopt_sahm
+GSM455123.CEL	kopt_sahm
+GSM455124.CEL	hpb_sahm
+GSM455125.CEL	hpb_sahm
+GSM455126.CEL	hpb_sahm
+
