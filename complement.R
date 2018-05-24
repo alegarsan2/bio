@@ -117,6 +117,7 @@ boxplot(celfiles, las=2)
 # Como podemos observar, en el experimento vemos distribuciones similares (aunque con ligeras diferencias) entre los diferentes chips que componen el experimento
 hist(celfiles)
 
+
 ## ------------------------------------------------------------------------
 #### 7. Pre-procesamiento.
 # Objetivo: equilibrar los niveles de intensidad de las muestras de todo el experimento a la vez que se mantiene 
@@ -138,6 +139,7 @@ eset <- expresso(celfiles,
                  verbose = TRUE) 
 
 # Accedemos a los datos de expresion de los microarrays y comprobamos su dimensin
+exprs(eset)
 dim(eset)
 
 # La matrix tiene una dimension de 54675 filas y 12 columas. Cada fila representa una probeset y cada columna un microarray determinados
@@ -331,4 +333,5 @@ write.table(results,file='comparison.txt',sep='\t',quote=FALSE,col.names=NA)
 
 # Ver todas las posibilidades de anotacion de hgu133plus en 
 #   http://www.bioconductor.org/packages/release/data/annotation/manuals/hgu133plus2.db/man/hgu133plus2.db.pdf
+
 
