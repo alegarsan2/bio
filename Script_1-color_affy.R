@@ -13,7 +13,7 @@ biocLite(c("affy","genefilter","limma"))
 library("affy")
 library("limma")
 library("genefilter")
-
+f
 
 #2. Import targets.txt file
 targets <- readTargets("list.txt", row.names="FileName")

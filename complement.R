@@ -72,7 +72,7 @@ library(genefilter)
 library(limma)
 library(hgu133plus2.db)
 
-# Cargar fichero auxiliar 'get_info_kegg.R'. Sustituye la línea de abajo por el directorio donde almacenes este fichero
+# Cargar fichero auxiliar 'get_info_kegg.R'. Sustituye la l?nea de abajo por el directorio donde almacenes este fichero
 source('/path_to/get_info_kegg.R') # Funcion que obtiene informacio de pathways a partir de una lista de identificadores
 # Si utilizas Windows, debes poner source('C:/path_to/get_info_kegg.R')
 
@@ -83,8 +83,8 @@ source('/path_to/get_info_kegg.R') # Funcion que obtiene informacio de pathways 
 
 ## El conjunto de datos a analizar tiene como referencia en GEO GSE20986 (http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE20986). 
 ## El trabajo publicado con este conjunto de datos se titula "Comparative gene expression profiling of human umbilical vein endothelial cells and ocular vascular endothelial cells"
-# El objetivo del trabajo es investigar las diferencias entre células endoteliales de vena umbilical humana y las células endoteliales vasculares oculares (coroides, retina e iris) con el 
-# propósito de determinar si estas diferencias pueden mejorar el entendimiento de enfermedades oculares
+# El objetivo del trabajo es investigar las diferencias entre c?lulas endoteliales de vena umbilical humana y las c?lulas endoteliales vasculares oculares (coroides, retina e iris) con el 
+# prop?sito de determinar si estas diferencias pueden mejorar el entendimiento de enfermedades oculares
 
 # Descargamos el conjunto de datos, creando un directorio llamado GSE20986 contenido en el directorio actual o de trabajo. Dentro del directorio GSE20986
 # encontramos el fichero GSE20986_RAW.tar que contiene los 12 ficheros CEL (tambiÃ©n comprimidos) y un fichero filelist.txt con el listado de los
@@ -137,7 +137,7 @@ celfiles <- ReadAffy(phenoData = "phenodata.txt", celfile.path="data")
 # celfiles es un objeto de tipo AffyBatch
 class(celfiles)
 # Al visualizar el contenido del objeto o variable celfiles, vemos que nos indica que el conjunto tiene 12 muestras o microarrays de Affymetrix
-# del tipo hgu133plus2, donde estan descritos 54675 probesets. El tamaño de los arrays es de 1164*1164. La informacion de anotacion es la descrita por hgu133plus2
+# del tipo hgu133plus2, donde estan descritos 54675 probesets. El tama?o de los arrays es de 1164*1164. La informacion de anotacion es la descrita por hgu133plus2
 celfiles
 
 # Acceso a los nombres de las muestras o microarrays
@@ -154,7 +154,7 @@ head(eset) # Echamos un vistazo a los valores de intesidad de algunas sondas
 
 ## ------------------------------------------------------------------------
 # A partir de este punto, tened a mano los materiales de la asignatura, seccion "2.2. Flujo de analisis de datos de expresion genica mediante microarrays"
-# Como recordareis, un flujo de analisis tipico de expresión diferencial de microarrays consiste en: analisis de calidad, pre-procesamiento, analisis de expresion diferencial y analisis de alto nivel
+# Como recordareis, un flujo de analisis tipico de expresi?n diferencial de microarrays consiste en: analisis de calidad, pre-procesamiento, analisis de expresion diferencial y analisis de alto nivel
 
 ## ------------------------------------------------------------------------
 #### 6. Analisis de calidad de los datos crudos
@@ -210,7 +210,7 @@ eset<-exprs(celfiles.rma)
 dim(eset)
 # La matrix tiene una dimension de 54675 filas y 12 columas. Cada fila representa una probeset y cada columna un microarray determinados
 # Vemos como se ha hecho efectiva la etapa de agregacion: los valores de intensidad de todas las sondas que forman parte de un transcrito, deben ser tenidos en cuenta ("agregados") para definir el valor de expresion del gen/probeset.
-# Los valores de intensidad de los datos pre-procesados están en escala log2 como podemos ver a continuacion:
+# Los valores de intensidad de los datos pre-procesados est?n en escala log2 como podemos ver a continuacion:
 head(eset)
 
 # Ahora comprobaremos con las  herramientas de analisis de calidad (boxplot e histogramas) indicadas arriba, que los datos pre-procesados tienen mejor
@@ -232,12 +232,12 @@ hist(celfiles.rma)
 #  - Eliminamos las probesets de control del chip que no son de interes para el investigador: comienzan por AFFX (feature.exclude="^AFFX")
 #  - Como medida  de dispersionn para el filtrado por varianza utilizamos IQR (interquartile range) (var.func=IQR) y elegimos el cuartil 0.5 de los valores IQR como umbral (var.cutoff=0.5). Aunque podria aplicarse un filtro menos agresivo
 #  - Exigimos ademas que no se eliminen probesets que no tengan identificador Entrez Gene ID (pueden ayudar a construir el modelo estadistico de expresion diferencial si cumplen los valores anteriores)
-# nsFilter devuelve una lista. El nuevo objeto ExpressionSet obtenido tras el filtrado está accesible a través del elemento 'eset'
+# nsFilter devuelve una lista. El nuevo objeto ExpressionSet obtenido tras el filtrado est? accesible a trav?s del elemento 'eset'
 
 celfiles.rma_filtered<-nsFilter(celfiles.rma, require.entrez=FALSE, var.func=IQR, var.cutoff=0.5, feature.exclude="^AFFX")$eset
 exprdata_filtered<-exprs(celfiles.rma_filtered)
 dim(exprdata_filtered)
-# La matriz tiene una dimension de 10273 filas y 12 columas. Âsi, hemos eliminado 54675-10273 = 44402 probesets
+# La matriz tiene una dimension de 10273 filas y 12 columas. ?si, hemos eliminado 54675-10273 = 44402 probesets
 
 
 
@@ -248,7 +248,7 @@ samples
 # Guardamos la informacionn fenotipica como un tipo de datos 'factor'
 samples <- as.factor(samples)
 
-# Creamos la matriz de diseño teniendo en cuenta las diferentes muestras. Cada fila representa un array y el valor 1 en la columna 
+# Creamos la matriz de dise?o teniendo en cuenta las diferentes muestras. Cada fila representa un array y el valor 1 en la columna 
 #  nos indica a que tipo de muestra pertenece el array
 design <- model.matrix(~0+samples) 
 design
@@ -258,19 +258,19 @@ colnames(design) <- c("choroid", "huvec", "iris", "retina")
 design
 
 
-# Dado un conjunto de arrays pre-procesados y filtrados y el diseño, ajustamos un modelo lineal a cada gen
+# Dado un conjunto de arrays pre-procesados y filtrados y el dise?o, ajustamos un modelo lineal a cada gen
 # en nuestro conjunto de arrays
 fit = lmFit(celfiles.rma_filtered, design)
 
 
 # Imaginemos que queremos estudiar, unicamente, la expresion diferencial entre arrays del coroides y arrays de la retina (coroides vs retina). 
-# Para ello, diseñamos la siguiente matriz de contrastes:
+# Para ello, dise?amos la siguiente matriz de contrastes:
 contrast.matrix = makeContrasts(
   choroid_retina = choroid - retina, 
   levels = design)
 contrast.matrix
 
-# Podriamos añdir a la anterior matriz de contrastes tantas comparativas o contrastes como deseemos, por ejemplo, si estamos interesados en las comparativas 
+# Podriamos a?dir a la anterior matriz de contrastes tantas comparativas o contrastes como deseemos, por ejemplo, si estamos interesados en las comparativas 
 # choroid vs retina, choroid vs huvec y choroid vs iris, nuestra matriz de los 3 contrastes seria la indicada a continuacion: 
 #contrast.matrix = makeContrasts(
 #  choroid_retina = choroid - retina, 
@@ -289,7 +289,7 @@ res.limma <- eBayes(fit.cont)
 # ajuste de los p-values por el metodo FDR (Benjamini Hochberg) (adjust.method='BH'). El maximo numero de probesets a mostrar 
 # es el contenido en nuestro conjunto de arrays (number=nrow(res.limma)) y unicamente se muestran aquellos genes cuyo valor 
 # valor p ajustado es inferior a 0.05 y, a la vez, tenga un log fold-change en valor absoluto de al menos 1 (lfc=1) que 
-# corresponde genes que estén sobre-expresados o inhibidos por al menos un factor de 2
+# corresponde genes que est?n sobre-expresados o inhibidos por al menos un factor de 2
 # La tabla de resultados muestra la siguiente informacion:
 # La primera columna corresponde al identificador del probeset, suele tener formato del tipo <valor_numerico>_at. A continuacion, se muestra 
 # la siguiente informacion para cada probeset/gen (aunque un gen puede estar en mas de un probeset)
@@ -298,12 +298,12 @@ res.limma <- eBayes(fit.cont)
 #  t: estadistico t moderado
 #  p.value: valor p asociado al test estadistico
 #  adj.P.value: valor p ajustado como resultado de la aplicacion del ajuste de test multiple
-#  B: probabilidad en base logaritmica de que el gen esté diferencialmente expresado (cuanto mayor, mejor)
+#  B: probabilidad en base logaritmica de que el gen est? diferencialmente expresado (cuanto mayor, mejor)
 # Ver manual de Limma para conocer mas detalles
 
 
 results <- topTable(res.limma, p.value=0.05, adjust.method="BH", sort.by="p",number=nrow(res.limma),lfc=1)
-# El argumento de topTable coef=<valor> nos indica qué contraste estudiar: si <valor>=1, devuelve resultados del primer contraste de la matriz de contrastes, si <valor>=2, devuelve resultados del segundo contraste de la matriz de contrastes, etc
+# El argumento de topTable coef=<valor> nos indica qu? contraste estudiar: si <valor>=1, devuelve resultados del primer contraste de la matriz de contrastes, si <valor>=2, devuelve resultados del segundo contraste de la matriz de contrastes, etc
 # Si solo hay un contraste en nuestra matriz de contrastes, no hace falta indicar ningun valor para coef
 
 dim(results)
@@ -321,7 +321,7 @@ head(results)
 
 
 ## ------------------------------------------------------------------------
-#### 9. Análisis de alto nivel
+#### 9. An?lisis de alto nivel
 # En esta ultima etapa, podemos realizar analisis adicionales que traten de dar una respuesta biologica a nuestro
 # conjunto de probesets/genes expresados diferencialmente:
 #   - Anotacion
@@ -348,9 +348,9 @@ symbols_list <- mget(probesets,hgu133plus2SYMBOL)
 symbols<-unlist(symbols_list)
 # Vemos a continuacion el SYMBOL para algunos probesets
 head(symbols)
-# Lo añadimos a la tabla de resultados
+# Lo a?adimos a la tabla de resultados
 results <- cbind(results, symbols)
-# Vemos las primeras filas de results. Se ha añadido una columna de symbols
+# Vemos las primeras filas de results. Se ha a?adido una columna de symbols
 
 head(results)
 
@@ -360,7 +360,7 @@ genename_list <-mget(probesets,hgu133plus2GENENAME)
 genename<-unlist(genename_list)
 # Vemos a continuacion el genename para algunos probesets
 head(genename)
-# Lo añadimos a la tabla de resultados
+# Lo a?adimos a la tabla de resultados
 results <- cbind(results, genename)
 head(results)
 
@@ -372,7 +372,7 @@ head(pathway_list)
 
 # Obtenemos informacion de los pathways por medio de la funcion get_info_kegg (get_info_kegg.R)
 kegg_full<-sapply(pathway_list,get_info_kegg)
-# Lo añadimos a la tabla de resultados
+# Lo a?adimos a la tabla de resultados
 results <- cbind(results, kegg_full)
 head(results)
 
@@ -386,17 +386,3 @@ write.table(results,file='choroidal_vs_retinal_endothelial_cells.txt',sep='\t',q
 #   http://www.bioconductor.org/packages/release/data/annotation/manuals/hgu133plus2.db/man/hgu133plus2.db.pdf
 
 
-## ------------------------------------------------------------------------
-#### Consideraciones finales
-### Este ejercicio guiado ha sido diseñado con propositos docentes. Los microarrays utilizados en este ejemplo (hgu133plus2), se siguen
-# utilizando en la actualidad (son del tipo 3'IVT). Sin embargo, existen otros microarrays de Affymetrix, tal y como vimos en los materiales, mucho mas sofisticados
-# y mas completos, como los whole-transcript. Asi, encontramos el modelo Human GEne ST 2.0 array. Existen paquetes en bioconductor para el procesamiento de estos arrays, como
-# por ejemplo el paquete oligo (http://www.bioconductor.org/packages/release/bioc/html/oligo.html). El workflow de analisis es muy similar al visto
-# en este ejercicio guiado.
-
-
-## ------------------------------------------------------------------------
-## ------------------------------------------------------------------------
-### Bibliografia
-#   - Bioconductor Case Studies: http://www-huber.embl.de/pub/pdf/HahneHuberGentlemanFalcon2008.pdf
-#   - Bioinformatics and Computational Biology Solutions using R and Bioconductor: http://link.springer.com/book/10.1007%2F0-387-29362-0
