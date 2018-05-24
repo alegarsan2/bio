@@ -1,11 +1,14 @@
 #Master in Bioinformatics 2018
 #Normalization and diferential expression for Affymetrix arrays
-x
+
 
 #setwd("mypath") ### Establecer directorio de trabajo
 
 ##1. Load libraries
-biocLite(c("affy","genefilter"))
+
+source("https://bioconductor.org/biocLite.R")
+
+biocLite(c("affy","genefilter","limma"))
 
 library("affy")
 library("limma")
@@ -13,7 +16,7 @@ library("genefilter")
 
 
 #2. Import targets.txt file
-targets <- readTargets("targets.txt", row.names="FileName")
+targets <- readTargets("list.txt", row.names="FileName")
 
 
 #3. Import .CEL files
