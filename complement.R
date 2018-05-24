@@ -77,32 +77,6 @@ source('/path_to/get_info_kegg.R') # Funcion que obtiene informacio de pathways 
 # Si utilizas Windows, debes poner source('C:/path_to/get_info_kegg.R')
 
 
-## ------------------------------------------------------------------------
-
-#### 3. Descarga del conjunto de datos haciendo uso de GEOquery
-
-## El conjunto de datos a analizar tiene como referencia en GEO GSE20986 (http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE20986). 
-## El trabajo publicado con este conjunto de datos se titula "Comparative gene expression profiling of human umbilical vein endothelial cells and ocular vascular endothelial cells"
-# El objetivo del trabajo es investigar las diferencias entre c?lulas endoteliales de vena umbilical humana y las c?lulas endoteliales vasculares oculares (coroides, retina e iris) con el 
-# prop?sito de determinar si estas diferencias pueden mejorar el entendimiento de enfermedades oculares
-
-# Descargamos el conjunto de datos, creando un directorio llamado GSE20986 contenido en el directorio actual o de trabajo. Dentro del directorio GSE20986
-# encontramos el fichero GSE20986_RAW.tar que contiene los 12 ficheros CEL (también comprimidos) y un fichero filelist.txt con el listado de los
-# ficheros descargados
-x = getGEOSuppFiles("GSE20986")
-x
-
-## Descomprimir el fichero descargado en un directorio llamado "data" contenido en el directorio de trabajo
-untar("GSE20986/GSE20986_RAW.tar", exdir = "data")
-## Si nos fijamos dentro de "data", todos los ficheros CEL estan tambien comprimidos
-
-## Listar todos los ficheros contenidos en el directorio data con el sufijo 'gz' (fichero comprimido) y guardarlos en la variable cels
-cels = list.files("data/", pattern = "[gz]")
-## Mediante sapply, aplicamos la descompresion (gunzip) a todos los ficheros comprimidos contenidos en ./data, obteniendo todos los ficheros .CEL
-sapply(paste("data", cels, sep = "/"), gunzip)
-
-## ------------------------------------------------------------------------
-
 #### 4. Construir la informacionn fenotipica del conjunto de datos. Tenemos 12 microarrays:
   # 3 microarrays correspondientes a muestras de celulas endoteliales de la vena umbilical (replicas biologicas) -> huvec
   # 3 microarrays correspondientes a muestras de celulas endoteliales vasculares del coroides (replicas biologicas) -> choroid
@@ -133,7 +107,7 @@ write.table(phenodata, "phenodata.txt", quote = F, sep = "\t", row.names = F)
 ## ------------------------------------------------------------------------
 
 #### 5. Lectura de microarrays (ficheros CEL) y su informacion fenotipica mediante el paquete affy
-celfiles <- ReadAffy(phenoData = "phenodata.txt", celfile.path="data")
+celfiles <- ReadAffy(filenames=targets$FileName)
 # celfiles es un objeto de tipo AffyBatch
 class(celfiles)
 # Al visualizar el contenido del objeto o variable celfiles, vemos que nos indica que el conjunto tiene 12 muestras o microarrays de Affymetrix
@@ -153,10 +127,6 @@ head(eset) # Echamos un vistazo a los valores de intesidad de algunas sondas
 
 
 ## ------------------------------------------------------------------------
-# A partir de este punto, tened a mano los materiales de la asignatura, seccion "2.2. Flujo de analisis de datos de expresion genica mediante microarrays"
-# Como recordareis, un flujo de analisis tipico de expresi?n diferencial de microarrays consiste en: analisis de calidad, pre-procesamiento, analisis de expresion diferencial y analisis de alto nivel
-
-## ------------------------------------------------------------------------
 #### 6. Analisis de calidad de los datos crudos
 # Veamos algunas de las herramientas: pseudo-imagenes, boxplots e histogramas
 
@@ -167,20 +137,17 @@ head(eset) # Echamos un vistazo a los valores de intesidad de algunas sondas
 image(celfiles)
 
 ## Boxplots
-# Los boxplots o diagramas de cajas, son unas herramientas que proporcionan de forma visual la distribucion de los datos 
-# (valores de intensidad de las sondas en este caso) de cada microarray del experimento a traves de cinco medidas: valor minimo,
-# cuartil Q1, mediana o cuartil Q2, cuartil Q3 y valor maximo
 # Como ser puede apreciar, los chips tienenr una distribucion de valores de intensidad similar
 boxplot(celfiles, las=2)
 
 ## Histogramas
-# los histogramas se utilizan para obtener de forma grafica la distribucion de los valores de intensidad de las sondas de cada uno de los 
-# microarrays del experimento. Es una herramienta complementaria a los boxplots que nos proporciona otra vision de la distribucion de los valores de intensidad de las sondas
 # Como podemos observar, en el experimento vemos distribuciones similares (aunque con ligeras diferencias) entre los diferentes chips que componen el experimento
 hist(celfiles)
 
 ## MAplots
-# Nos los vamos a ver en este ejercicio guiado, pero los podeis obtener mediante la funcin MAplot del paquete AffyPLM (http://www.bioconductor.org/packages/3.2/bioc/html/affyPLM.html)
+#En este caso no vemos necesario realizar MA plot ya que visualizando las pseudo imagenes no vemos ninguna 
+#variación muy grande.
+#MAplot del paquete AffyPLM (http://www.bioconductor.org/packages/3.2/bioc/html/affyPLM.html)
 
 # POr tanto, de acuerdo a estas herramientas de calidad, todos los arrays, en general, tienen buena calidad.
 
@@ -237,13 +204,13 @@ hist(celfiles.rma)
 celfiles.rma_filtered<-nsFilter(celfiles.rma, require.entrez=FALSE, var.func=IQR, var.cutoff=0.5, feature.exclude="^AFFX")$eset
 exprdata_filtered<-exprs(celfiles.rma_filtered)
 dim(exprdata_filtered)
-# La matriz tiene una dimension de 10273 filas y 12 columas. ?si, hemos eliminado 54675-10273 = 44402 probesets
+# La matriz tiene una dimension de 10094 filas y 12 columas. ?si, hemos eliminado 54675-10094 = 44581 probesets
 
 
 
 # Recordemos la informacion fenotipica
 phenodata
-samples <- celfiles$Targets
+samples <- targets$Classes
 samples
 # Guardamos la informacionn fenotipica como un tipo de datos 'factor'
 samples <- as.factor(samples)
@@ -254,7 +221,7 @@ design <- model.matrix(~0+samples)
 design
 colnames(design)
 # Proporcionamos a la cabecera de las columnas nombres mas intuitivos 
-colnames(design) <- c("choroid", "huvec", "iris", "retina")
+colnames(design) <- c("hpb_dmso", "hpb_sahm", "kopt_dmso", "kopr_sahm")
 design
 
 
