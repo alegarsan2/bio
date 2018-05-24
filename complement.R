@@ -166,15 +166,18 @@ hist(celfiles)
   # Normalizacion: metodo quantile
   # Correccion PM-MM: PMonly
   # Agregacion: metodo median-polish
-celfiles.rma <- rma(celfiles)
-celfiles.rma
-
-# Los datos de microarrays pre-procesados se encuentran en la variable celfiles.rma, que es un objeto tipo ExpressionSet
-class(celfiles.rma)
+eset <- expresso(celfiles,
+                 bg.correct = TRUE, 
+                 bgcorrect.method="rma",
+                 normalize = TRUE, 
+                 normalize.method="quantiles", 
+                 pmcorrect.method="pmonly", 
+                 summary.method="medianpolish",
+                 verbose = TRUE) 
 
 # Accedemos a los datos de expresion de los microarrays y comprobamos su dimensin
-eset<-exprs(celfiles.rma)
 dim(eset)
+
 # La matrix tiene una dimension de 54675 filas y 12 columas. Cada fila representa una probeset y cada columna un microarray determinados
 # Vemos como se ha hecho efectiva la etapa de agregacion: los valores de intensidad de todas las sondas que forman parte de un transcrito, deben ser tenidos en cuenta ("agregados") para definir el valor de expresion del gen/probeset.
 # Los valores de intensidad de los datos pre-procesados est?n en escala log2 como podemos ver a continuacion:
@@ -182,8 +185,10 @@ head(eset)
 
 # Ahora comprobaremos con las  herramientas de analisis de calidad (boxplot e histogramas) indicadas arriba, que los datos pre-procesados tienen mejor
 # calidad que los datos crudos
-boxplot(celfiles.rma,las=2)
-hist(celfiles.rma)
+exprseset <- as.data.frame(exprs(eset))		
+boxplot(data.frame(exprseset),
+        main="Boxplot After Normalization (log scale)",
+        col = "white", las = 2)
 
 ## ------------------------------------------------------------------------
 #### 8. Analisis de expresion diferencial
@@ -201,9 +206,7 @@ hist(celfiles.rma)
 #  - Exigimos ademas que no se eliminen probesets que no tengan identificador Entrez Gene ID (pueden ayudar a construir el modelo estadistico de expresion diferencial si cumplen los valores anteriores)
 # nsFilter devuelve una lista. El nuevo objeto ExpressionSet obtenido tras el filtrado est? accesible a trav?s del elemento 'eset'
 
-celfiles.rma_filtered<-nsFilter(celfiles.rma, require.entrez=FALSE, var.func=IQR, var.cutoff=0.5, feature.exclude="^AFFX")$eset
-exprdata_filtered<-exprs(celfiles.rma_filtered)
-dim(exprdata_filtered)
+
 # La matriz tiene una dimension de 10094 filas y 12 columas. ?si, hemos eliminado 54675-10094 = 44581 probesets
 
 
