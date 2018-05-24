@@ -1,5 +1,5 @@
 
-###### 1. Instalación de paquetes necesarios para la realización de este ejercicio
+###### 1. Instalación de paquetes necesarios para la realización de este ejercicio#####
 
 # Geo Query
 # http://www.bioconductor.org/packages/release/bioc/html/GEOquery.html
@@ -71,37 +71,11 @@ library(affyPLM)
 library(genefilter)
 library(limma)
 library(hgu133plus2.db)
-
-# Cargar fichero auxiliar 'get_info_kegg.R'. Sustituye la l?nea de abajo por el directorio donde almacenes este fichero
-source('/path_to/get_info_kegg.R') # Funcion que obtiene informacio de pathways a partir de una lista de identificadores
-# Si utilizas Windows, debes poner source('C:/path_to/get_info_kegg.R')
+library(KEGGREST)
 
 
-#### 4. Construir la informacionn fenotipica del conjunto de datos. Tenemos 12 microarrays:
-  # 3 microarrays correspondientes a muestras de celulas endoteliales de la vena umbilical (replicas biologicas) -> huvec
-  # 3 microarrays correspondientes a muestras de celulas endoteliales vasculares del coroides (replicas biologicas) -> choroid
-  # 3 microarrays correspondientes a muestras de celulas endoteliales vasculares de la retina (replicas biologicas) -> retina
-  # 3 microarrays correspondientes a muestras de celulas endoteliales vasculares del iris (replicas biologicas) -> iris
-phenodata = matrix(rep(list.files("data"), 2), ncol =2)
-class(phenodata)
-phenodata <- as.data.frame(phenodata)
-colnames(phenodata) <- c("Name", "FileName")
-phenodata$Targets <- c("iris", 
-                       "retina", 
-                       "retina", 
-                       "iris", 
-                       "retina", 
-                       "iris", 
-                       "choroid", 
-                       "choroid", 
-                       "choroid", 
-                       "huvec", 
-                       "huvec", 
-                       "huvec")
 
-# La informacionn fenotipica nos muestra la correspondencia entre el fichero CEL y el origen de las celulas (cordonn umbilical, coroides, retina o iris)
-# Guardamos la informacionn fenotpica en el fichero phenodata.txt contenido en el directorio data
-write.table(phenodata, "phenodata.txt", quote = F, sep = "\t", row.names = F)
+targets <- readTargets("list.txt", row.names="FileName")
 
 
 ## ------------------------------------------------------------------------
@@ -132,28 +106,16 @@ head(eset) # Echamos un vistazo a los valores de intesidad de algunas sondas
 
 ## Pseudo-imagenes
 # Nos muestra la distribucion espacial de los datos de todos los microarrays del conjunto de datos. 
-# Cada vez que pulsemos return nos mostrara un chip del conjunto hasta mostrarlos todos
 # Como se puede observar, no se observan artefactos espaciales
 image(celfiles)
 
 ## Boxplots
-# Como ser puede apreciar, los chips tienenr una distribucion de valores de intensidad similar
+# Como ser puede apreciar, los chips tienen una distribucion de valores de intensidad similar
 boxplot(celfiles, las=2)
 
 ## Histogramas
 # Como podemos observar, en el experimento vemos distribuciones similares (aunque con ligeras diferencias) entre los diferentes chips que componen el experimento
 hist(celfiles)
-
-## MAplots
-#En este caso no vemos necesario realizar MA plot ya que visualizando las pseudo imagenes no vemos ninguna 
-#variación muy grande.
-#MAplot del paquete AffyPLM (http://www.bioconductor.org/packages/3.2/bioc/html/affyPLM.html)
-
-# POr tanto, de acuerdo a estas herramientas de calidad, todos los arrays, en general, tienen buena calidad.
-
-## Para herramietnas mas complejas de analisis de calidad, echad un vistazo a la siguiente bibliografia:
-# Bioconductor Case Studies: http://www-huber.embl.de/pub/pdf/HahneHuberGentlemanFalcon2008.pdf
-
 
 ## ------------------------------------------------------------------------
 #### 7. Pre-procesamiento.
@@ -230,13 +192,13 @@ design
 
 # Dado un conjunto de arrays pre-procesados y filtrados y el dise?o, ajustamos un modelo lineal a cada gen
 # en nuestro conjunto de arrays
-fit = lmFit(celfiles.rma_filtered, design)
+fit = lmFit(eset, design)
 
 
 # Imaginemos que queremos estudiar, unicamente, la expresion diferencial entre arrays del coroides y arrays de la retina (coroides vs retina). 
 # Para ello, dise?amos la siguiente matriz de contrastes:
 contrast.matrix = makeContrasts(
-  choroid_retina = choroid - retina, 
+  hpb_dmsovshpb_sahm = hpb_dmso - hpb_sahm, 
   levels = design)
 contrast.matrix
 
@@ -277,16 +239,9 @@ results <- topTable(res.limma, p.value=0.05, adjust.method="BH", sort.by="p",num
 # Si solo hay un contraste en nuestra matriz de contrastes, no hace falta indicar ningun valor para coef
 
 dim(results)
-# Tenemos un total de 1701 probesets con un valor p-ajustado <0.05 y con al menos un lfc>= 1 (valor absoluto) (genes sobre-expresados / inhibidos por un factor de al menos 2)
+# Tenemos un total de 164 probesets con un valor p-ajustado <0.05 y con al menos un lfc>= 1 (valor absoluto) (genes sobre-expresados / inhibidos por un factor de al menos 2)
 
-# Vamos a fijarnos en las primeras filas de esta tabla
 head(results)
-# En la matriz de contrastes, indicamos choroid - retina, es decir, choroid vs retina. Por tanto aquellos probesets cuyo logFC o estadistico t
-# tenga un valor positivo, significa sobre-expresion de ese probeset en choroid con respecto a retina. Por el contrario, un valor 
-# negativo significa inhibicionn de ese probeset en choroid con respecto a retina
-
-# Ayuda: En el manual completo de LIMMA, podemos obtener mas informacionn (http://www.bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf)
-# El capitulo 8.2 nos muestra un ejemplo sencillo con arrays de Affymetrix
 
 
 
@@ -340,7 +295,29 @@ head(results)
 pathway_list <- mget(probesets,hgu133plus2PATH)
 head(pathway_list)
 
-# Obtenemos informacion de los pathways por medio de la funcion get_info_kegg (get_info_kegg.R)
+
+#Funcion para obtener informacion de pathways
+get_info_kegg<-function(pathway_ids)
+{
+  
+  info_kegg<-c()
+  
+  if (any(is.na(pathway_ids))==FALSE) # Si existen identificadores de pathways
+  {
+    for(current_pathway in pathway_ids) # Recorremos todos los pathway ids
+    {
+      print(paste('Getting pathway information for',current_pathway))
+      # Funci√≥n de KEGGREST que devuelve para un pathway ID, su descripci√≥n (atributo NAME):
+      kegg_name<- keggGet(paste('hsa',current_pathway,sep=''))[[1]]$NAME 
+      # Concatenamos el resultado en la forma <pathway_id>:info_pathway
+      info_kegg<-cbind(info_kegg,paste(current_pathway,kegg_name,sep=':'))
+    }
+  }
+  
+  return(paste(info_kegg,collapse=' // '))
+  
+}
+# Obtenemos informacion de los pathways por medio de la funcion get_info_kegg 
 kegg_full<-sapply(pathway_list,get_info_kegg)
 # Lo a?adimos a la tabla de resultados
 results <- cbind(results, kegg_full)
@@ -348,11 +325,10 @@ head(results)
 
 
 # Guardamos los resultados en un fichero que, posteriormente, podemos abrir con un programa de hoja de calculo, por ejemplo Excel o Calc
-write.table(results,file='choroidal_vs_retinal_endothelial_cells.txt',sep='\t',quote=FALSE,col.names=NA)
+write.table(results,file='comparison.txt',sep='\t',quote=FALSE,col.names=NA)
 
 # Tambien podemos realizar una tarea similar con el objetvo hgu133plus2GO para obtener las anotaciones de Gene Ontology de un conjunto de probesets
 
 # Ver todas las posibilidades de anotacion de hgu133plus en 
 #   http://www.bioconductor.org/packages/release/data/annotation/manuals/hgu133plus2.db/man/hgu133plus2.db.pdf
-
 
