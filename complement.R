@@ -61,6 +61,15 @@ if (!("KEGGREST" %in% installed.packages())) {
   source("http://www.bioconductor.org/biocLite.R"); 
   biocLite("KEGGREST");
 }
+library(KEGGREST)
+install.packages("ggfortify")
+library(ggfortify)
+
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+
+library(hgu133plus2.db)
 
 ## ------------------------------------------------------------------------
 
@@ -141,6 +150,15 @@ eset <- expresso(celfiles,
 # Accedemos a los datos de expresion de los microarrays y comprobamos su dimensin
 exprs(eset)
 dim(eset)
+
+#PCA
+#Tras normalizar los datos realizamos PCA para observar si hay algun error.
+#Podemos observar como ya hay una separación entre los diferentes grupos.
+
+df_pca <- prcomp(as.data.frame(t(as.matrix(exprs(eset)))), center = TRUE, scale. = TRUE)
+p1 <- ggbiplot(df_pca, groups = targets$Classes,ellipse = FALSE,var.axes = FALSE)
+p1
+
 
 # La matrix tiene una dimension de 54675 filas y 12 columas. Cada fila representa una probeset y cada columna un microarray determinados
 # Vemos como se ha hecho efectiva la etapa de agregacion: los valores de intensidad de todas las sondas que forman parte de un transcrito, deben ser tenidos en cuenta ("agregados") para definir el valor de expresion del gen/probeset.
@@ -234,6 +252,7 @@ res.limma <- eBayes(fit.cont)
 #  adj.P.value: valor p ajustado como resultado de la aplicacion del ajuste de test multiple
 #  B: probabilidad en base logaritmica de que el gen est? diferencialmente expresado (cuanto mayor, mejor)
 # Ver manual de Limma para conocer mas detalles
+results <- topTable(res.limma, number = nrow(res.limma), adjust.method="BH",sort.by="p")
 
 
 results <- topTable(res.limma, p.value=0.05, adjust.method="BH", sort.by="p",number=nrow(res.limma),lfc=1)
@@ -334,4 +353,69 @@ write.table(results,file='comparison.txt',sep='\t',quote=FALSE,col.names=NA)
 # Ver todas las posibilidades de anotacion de hgu133plus en 
 #   http://www.bioconductor.org/packages/release/data/annotation/manuals/hgu133plus2.db/man/hgu133plus2.db.pdf
 
+###Volcanoplot
+## Creamos funcion para realizar el plot Volcanoplot ('nombredocumento',umbral pvalor por defecto 0.05, umbral foldChange por defecto 1)
+Volcanoplot <- function(dat,pval = 0.05 ,fold = 1){
+  
+  diff_df <- results
+  colnames(diff_df)
+  
+  # Añadimos columna de grupo, por defecto es no significativo"
+  diff_df["group"] <- "NoSignificativo"
+  
+  # for our plot, we want to highlight 
+  # FDR < 0.05 (significance level)
+  # Fold Change > 1.5
+  
+  # Cambiamos el valor de la columna si supera p value
+  diff_df[which(diff_df['adj.P.Val'] < pval & abs(diff_df['logFC']) < fold ),"group"] <- "Significativo"
+  
+  # si supera fold change pero no pvalue 
+  diff_df[which(diff_df['adj.P.Val'] > pval & abs(diff_df['logFC']) > fold ),"group"] <- "FoldChange"
+  
+  # si es significativo y supera el umbral de FC
+  diff_df[which(diff_df['adj.P.Val'] < pval & abs(diff_df['logFC']) > fold ),"group"] <- "SignificativoyFoldChange"
+  
+  
+  # Calculamos los picos para poner los nombres
+  thres <- diff_df[diff_df$adj.P.Val < pval,]
+  thres <- thres[thres$logFC > fold | thres$logFC < -fold,]
+  top_peaks <- thres[with(thres, order(logFC)),][1:5,]
+  top_peaks <- rbind(top_peaks, thres[with(thres,order(-logFC)),][1:5,])
+  
+  
+  # Add gene labels for all of the top genes we found
+  # here we are creating an empty list, and filling it with entries for each row in the dataframe
+  # each list entry is another list with named items that will be used by Plot.ly
+  a <- list()
+  for (i in seq_len(nrow(top_peaks))) {
+    m <- top_peaks[i, ]
+    a[[i]] <- list(
+      x = m[["logFC"]],
+      y = -log10(m[["adj.P.Val"]]),
+      text = m[["genename"]],
+      xref = "x",
+      yref = "y",
+      showarrow = TRUE,
+      arrowhead = 0.5,
+      ax = 20,
+      ay = -40
+    )
+  }
+  # Unimos varias columnas para tener el genename en el hover text
+  diff_df$text <- paste(diff_df$gene,diff_df$genename,'\n',diff_df$kegg_full)
+  dim(diff_df)
+  head(diff_df)
+  class(diff_df$pvalue)
+  # realizamos el Plot.ly plot
+  x <- list(title = "logFC")
+  y <- list(title = "-log10 pvalor")
+  p <- plot_ly(data = diff_df, x = diff_df$logFC, y = -log10(diff_df$adj.P.Val), text = diff_df$text, mode = "markers", color = diff_df$group) %>% 
+    layout(title = dat, xaxis = x, yaxis = y) %>%
+    layout(annotations = a)
+  p
+  
+  
+  #htmlwidgets::saveWidget(as_widget(p),paste(dat,'.html', sep = ""))
+}
 
