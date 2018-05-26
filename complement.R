@@ -81,7 +81,7 @@ library(genefilter)
 library(limma)
 library(hgu133plus2.db)
 library(KEGGREST)
-
+library(ggbiplot)
 
 
 targets <- readTargets("list.txt", row.names="FileName")
@@ -156,8 +156,8 @@ dim(eset)
 #Podemos observar como ya hay una separación entre los diferentes grupos.
 
 df_pca <- prcomp(as.data.frame(t(as.matrix(exprs(eset)))), center = TRUE, scale. = TRUE)
-p1 <- ggbiplot(df_pca, groups = targets$Classes,ellipse = FALSE,var.axes = FALSE)
-p1
+pca_plot <- ggbiplot(df_pca, groups = targets$Classes,ellipse = FALSE,var.axes = FALSE)
+pca_plot
 
 
 # La matrix tiene una dimension de 54675 filas y 12 columas. Cada fila representa una probeset y cada columna un microarray determinados
@@ -194,11 +194,7 @@ boxplot(data.frame(exprseset),
 
 
 # Recordemos la informacion fenotipica
-phenodata
-samples <- targets$Classes
-samples
-# Guardamos la informacionn fenotipica como un tipo de datos 'factor'
-samples <- as.factor(samples)
+samples <- as.factor(targets$Classes)
 
 # Creamos la matriz de dise?o teniendo en cuenta las diferentes muestras. Cada fila representa un array y el valor 1 en la columna 
 #  nos indica a que tipo de muestra pertenece el array
@@ -206,7 +202,7 @@ design <- model.matrix(~0+samples)
 design
 colnames(design)
 # Proporcionamos a la cabecera de las columnas nombres mas intuitivos 
-colnames(design) <- c("hpb_dmso", "hpb_sahm", "kopt_dmso", "kopr_sahm")
+colnames(design) <- c("hpb_dmso", "hpb_sahm", "kopt_dmso", "kopt_sahm")
 design
 
 
@@ -215,21 +211,12 @@ design
 fit = lmFit(eset, design)
 
 
-# Imaginemos que queremos estudiar, unicamente, la expresion diferencial entre arrays del coroides y arrays de la retina (coroides vs retina). 
+# Imaginemos que queremos estudiar expresion diferencial entre SAHM1 y DMSO en las diferentes lineas celulares.
 # Para ello, dise?amos la siguiente matriz de contrastes:
 contrast.matrix = makeContrasts(
-  hpb_dmsovshpb_sahm = hpb_dmso - hpb_sahm, 
+  hpb_sahmvshpb_dmso = hpb_sahm - hpb_dmso, kopt_sahmvshopt_dmso = kopt_sahm - kopt_dmso,
   levels = design)
 contrast.matrix
-
-# Podriamos a?dir a la anterior matriz de contrastes tantas comparativas o contrastes como deseemos, por ejemplo, si estamos interesados en las comparativas 
-# choroid vs retina, choroid vs huvec y choroid vs iris, nuestra matriz de los 3 contrastes seria la indicada a continuacion: 
-#contrast.matrix = makeContrasts(
-#  choroid_retina = choroid - retina, 
-#  choroid_huvec = choroid - huvec, 
-#  choroid_iris <- choroid - iris, 
-#  levels = design)
-#
 
 
 # Calculamos una estimacion de los coeficientes y los errores para un conjunto de contrastes
@@ -252,10 +239,11 @@ res.limma <- eBayes(fit.cont)
 #  adj.P.value: valor p ajustado como resultado de la aplicacion del ajuste de test multiple
 #  B: probabilidad en base logaritmica de que el gen est? diferencialmente expresado (cuanto mayor, mejor)
 # Ver manual de Limma para conocer mas detalles
-results <- topTable(res.limma, number = nrow(res.limma), adjust.method="BH",sort.by="p")
+
+results <- topTable(res.limma, number = nrow(res.limma), adjust.method="BH",sort.by="p", coef = 2)
 
 
-results <- topTable(res.limma, p.value=0.05, adjust.method="BH", sort.by="p",number=nrow(res.limma),lfc=1)
+results <- topTable(res.limma, p.value=0.05, adjust.method="BH", sort.by="p", number=nrow(res.limma), lfc=1,coef = 2)
 # El argumento de topTable coef=<valor> nos indica qu? contraste estudiar: si <valor>=1, devuelve resultados del primer contraste de la matriz de contrastes, si <valor>=2, devuelve resultados del segundo contraste de la matriz de contrastes, etc
 # Si solo hay un contraste en nuestra matriz de contrastes, no hace falta indicar ningun valor para coef
 
@@ -383,10 +371,7 @@ Volcanoplot <- function(dat,pval = 0.05 ,fold = 1){
   top_peaks <- thres[with(thres, order(logFC)),][1:5,]
   top_peaks <- rbind(top_peaks, thres[with(thres,order(-logFC)),][1:5,])
   
-  
-  # Add gene labels for all of the top genes we found
-  # here we are creating an empty list, and filling it with entries for each row in the dataframe
-  # each list entry is another list with named items that will be used by Plot.ly
+  #Añadir flechas indicadoras.
   a <- list()
   for (i in seq_len(nrow(top_peaks))) {
     m <- top_peaks[i, ]
