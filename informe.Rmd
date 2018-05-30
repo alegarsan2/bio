@@ -35,17 +35,84 @@ output:
 
 ## Your Familiar Tools
 
-Feel free to use the `knitr` infrastructure with dozens of tunable options in
-your document.
-
 ```{r fig.width=6, fig.height=6, fig.align='center'}
-set.seed(123)
-n <- 1000
-x1  <- matrix(rnorm(n), ncol = 2)
-x2  <- matrix(rnorm(n, mean = 3, sd = 1.5), ncol = 2)
-x   <- rbind(x1, x2)
-head(x)
-smoothScatter(x, xlab = "x1", ylab = "x2")
+###### 1. Instalación de paquetes necesarios para la realización de este ejercicio#####
+
+# Geo Query
+# http://www.bioconductor.org/packages/release/bioc/html/GEOquery.html
+# Paquete que permite descargar del repositorio GEO (Gene Expression Omnibus) conjuntos de microarrays
+if (!("GEOquery" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("GEOquery");
+}
+
+
+# AFFY
+# http://www.bioconductor.org/packages/3.2/bioc/html/affy.html
+# Paquete que contiene funciones para el análisis de datos de microarrays de oligonucleótidos (Affymetrix)
+if (!("affy" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("affy");
+}
+
+
+## AFFYPLM
+# http://www.bioconductor.org/packages/release/bioc/html/affyPLM.html
+# Paquete que extiende y mejora la funcionalidad del paquete affy (herramientas de análisis de calidad)
+if (!("affyPLM" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("affyPLM");
+}
+
+
+## GENEFILTER
+# http://www.bioconductor.org/packages/release/bioc/html/genefilter.html
+# Paquete que proporciona funciones para el filtrado de genes a partir de un conjunto de microarrays
+if (!("genefilter" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("genefilter");
+}
+
+
+# LIMMA
+# http://www.bioconductor.org/packages/3.2/bioc/html/limma.html
+# Paquete para el análisis de expresión diferencial en microarrays, aunque contiene mucha funcionalidad adicional para el análisis de microarrays
+if (!("limma" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("limma");
+}
+
+
+# hgu133plus2
+# http://www.bioconductor.org/packages/3.2/data/annotation/html/hgu133plus2.db.html
+# Paquete de anotación -> nos indica la correspondencia entre las sondas y el gen al que representa, entre otro tipo de información de anotación: términos GO, Entrez IDs, cromosoma, etc
+if (!("hgu133plus2.db" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("hgu133plus2.db");
+}
+
+# KEGGREST
+# http://www.bioconductor.org/packages/release/bioc/html/KEGGREST.html
+# Paquete que proporciona una interfaz con el servidor KEGG REST
+if (!("KEGGREST" %in% installed.packages())) { 
+  source("http://www.bioconductor.org/biocLite.R"); 
+  biocLite("KEGGREST");
+}
+
+install.packages("ggfortify")
+library(ggfortify)
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+library(hgu133plus2.db)
+library(GEOquery)
+library(affy)
+library(affyPLM)
+library(genefilter)
+library(limma)
+library(hgu133plus2.db)
+library(KEGGREST)
+library(ggbiplot)
 ```
 
 You can include code snippets of languages other than R, but note that
